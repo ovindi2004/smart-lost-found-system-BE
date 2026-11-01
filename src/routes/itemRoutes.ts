@@ -6,6 +6,8 @@ import {
   getAllItems,
   updateItem,
   deleteItem,
+  getSmartMatches
+  
 } from "../controllers/itemController.js";
 
 const router = Router();
@@ -15,5 +17,6 @@ router.get("/", getAllItems);
 
 router.put("/:id", updateItem);
 router.delete("/:id", deleteItem);
+router.get("/:id/matches", getSmartMatches);
 
 export default router;
