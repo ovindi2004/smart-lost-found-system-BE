@@ -4,8 +4,7 @@ import {
   getAllUsers,
   deleteUser,
 } from "../controllers/userController.js";
-import { adminMiddleware } from "../middleware/adminMiddleware.js";
-
+import { adminMiddleware } from "../middleware/authMiddleware.js";
 const router = Router();
 
 // GET ALL USERS
