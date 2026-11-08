@@ -1,11 +1,10 @@
-
 import express from "express";
 import cors from "cors";
 import itemRoutes from "./routes/itemRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import claimRoutes from "./routes/claimRoutes.js";
-
+import chatbotRoutes from "./routes/chatbotRoutes.js";
 
 const app = express();
 
@@ -20,4 +19,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/claims", claimRoutes);
+app.use("/api/chatbot", chatbotRoutes);
+
 export default app;
