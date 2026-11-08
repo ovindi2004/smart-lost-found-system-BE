@@ -5,6 +5,7 @@ import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import claimRoutes from "./routes/claimRoutes.js";
 import chatbotRoutes from "./routes/chatbotRoutes.js";
+import imageRecognitionRoutes from "./routes/imageRecognitionRoutes.js";
 
 const app = express();
 
@@ -20,5 +21,6 @@ app.use("/api/items", itemRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/claims", claimRoutes);
 app.use("/api/chatbot", chatbotRoutes);
+app.use("/api/image-recognition", imageRecognitionRoutes);
 
 export default app;
