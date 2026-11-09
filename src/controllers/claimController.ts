@@ -2,6 +2,7 @@
 import type { Request, Response } from "express";
 import Claim from "../models/Claim.js";
 import Item from "../models/Item.js";
+import Notification from "../models/Notification.js";
 
 // CREATE CLAIM REQUEST
 export const createClaim = async (
@@ -84,6 +85,14 @@ export const createClaim = async (
       claimantId,
       ownerId: item.userId,
       proofDescription: proofDescription.trim(),
+    });
+
+    // CREATE NOTIFICATION FOR ITEM OWNER
+    await Notification.create({
+      userId: item.userId,
+      message: `Someone submitted a claim for your item: ${item.title}`,
+      type: "CLAIM_REQUEST",
+      relatedItemId: item._id,
     });
 
     res.status(201).json({
@@ -285,19 +294,43 @@ export const updateClaimStatus = async (
       claim.status = "APPROVED";
       await claim.save();
 
-      await Claim.updateMany(
-        {
-          itemId: claim.itemId,
-          _id: { $ne: claim._id },
-          status: "PENDING",
-        },
-        {
-          status: "REJECTED",
-        }
-      );
+      // NOTIFY CLAIMANT - APPROVED
+      await Notification.create({
+        userId: claim.claimantId,
+        message: "Good news! Your claim request has been approved.",
+        type: "CLAIM_APPROVED",
+        relatedItemId: claim.itemId,
+    });
+
+      // REJECT OTHER PENDING CLAIMS AND SEND NOTIFICATIONS
+const otherClaims = await Claim.find({
+  itemId: claim.itemId,
+  _id: { $ne: claim._id },
+  status: "PENDING",
+});
+
+for (const otherClaim of otherClaims) {
+  otherClaim.status = "REJECTED";
+  await otherClaim.save();
+
+  await Notification.create({
+    userId: otherClaim.claimantId,
+    message: "Your claim request has been rejected because another claim was approved.",
+    type: "CLAIM_REJECTED",
+    relatedItemId: claim.itemId,
+  });
+}
     } else {
       claim.status = "REJECTED";
       await claim.save();
+
+      // NOTIFY CLAIMANT - REJECTED
+     await Notification.create({
+        userId: claim.claimantId,
+        message: "Your claim request has been rejected.",
+        type: "CLAIM_REJECTED",
+        relatedItemId: claim.itemId,
+});
     }
 
     res.status(200).json({
