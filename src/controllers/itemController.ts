@@ -16,17 +16,27 @@ export const createItem = async (
       location,
       date,
       image,
-      userId,
     } = req.body;
 
+    const authenticatedUserId = (
+      req as Request & { userId?: string }
+    ).userId;
+
+    if (!authenticatedUserId) {
+      res.status(401).json({
+        success: false,
+        message: "Please login first.",
+      });
+      return;
+    }
+
     if (
-      !title ||
-      !description ||
-      !category ||
+      !title?.trim() ||
+      !description?.trim() ||
+      !category?.trim() ||
       !itemType ||
-      !location ||
-      !date ||
-      !userId
+      !location?.trim() ||
+      !date
     ) {
       res.status(400).json({
         success: false,
@@ -51,7 +61,7 @@ export const createItem = async (
       location,
       date,
       image,
-      userId,
+      userId: authenticatedUserId,
     });
 
     res.status(201).json({
@@ -61,6 +71,7 @@ export const createItem = async (
     });
   } catch (error) {
     console.error("Create item error:", error);
+
     res.status(500).json({
       success: false,
       message: "Failed to create item.",
@@ -85,6 +96,7 @@ export const getAllItems = async (
     });
   } catch (error) {
     console.error("Get items error:", error);
+
     res.status(500).json({
       success: false,
       message: "Failed to retrieve items.",
@@ -109,18 +121,82 @@ export const updateItem = async (
       status,
     } = req.body;
 
-    const updatedItem = await Item.findByIdAndUpdate(
-      req.params.id,
-      {
-        title,
-        description,
-        category,
-        itemType,
-        location,
-        date,
-        image,
-        status,
-      },
+    const authenticatedUserId = (
+      req as Request & { userId?: string }
+    ).userId;
+
+    if (!authenticatedUserId) {
+      res.status(401).json({
+        success: false,
+        message: "Please login first.",
+      });
+      return;
+    }
+
+    if (
+      !title?.trim() ||
+      !description?.trim() ||
+      !category?.trim() ||
+      !itemType ||
+      !location?.trim() ||
+      !date
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "Please provide all required fields.",
+      });
+      return;
+    }
+
+    if (!["LOST", "FOUND"].includes(itemType)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid item type.",
+      });
+      return;
+    }
+
+    if (
+      status !== undefined &&
+      !["OPEN", "MATCHED", "RETURNED"].includes(status)
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid item status.",
+      });
+      return;
+    }
+
+    const updateData: Record<string, unknown> = {
+      title,
+      description,
+      category,
+      itemType,
+      location,
+      date,
+      image,
+    };
+
+    if (status !== undefined) {
+      updateData.status = status;
+    }
+
+    const itemId = req.params.id;
+
+if (!itemId) {
+  res.status(400).json({
+    success: false,
+    message: "Invalid item ID.",
+  });
+  return;
+}
+
+    const updatedItem = await Item.findOneAndUpdate(
+     {
+  _id: itemId,
+  userId: authenticatedUserId,
+},
+      updateData,
       {
         new: true,
         runValidators: true,
@@ -130,7 +206,7 @@ export const updateItem = async (
     if (!updatedItem) {
       res.status(404).json({
         success: false,
-        message: "Item not found.",
+        message: "Item not found or you do not have permission to update it.",
       });
       return;
     }
@@ -142,6 +218,7 @@ export const updateItem = async (
     });
   } catch (error) {
     console.error("Update item error:", error);
+
     res.status(500).json({
       success: false,
       message: "Failed to update item.",
@@ -155,12 +232,37 @@ export const deleteItem = async (
   res: Response
 ): Promise<void> => {
   try {
-    const deletedItem = await Item.findByIdAndDelete(req.params.id);
+    const authenticatedUserId = (
+      req as Request & { userId?: string }
+    ).userId;
+
+    if (!authenticatedUserId) {
+      res.status(401).json({
+        success: false,
+        message: "Please login first.",
+      });
+      return;
+    }
+
+    const itemId = req.params.id;
+
+if (!itemId) {
+  res.status(400).json({
+    success: false,
+    message: "Invalid item ID.",
+  });
+  return;
+}
+
+    const deletedItem = await Item.findOneAndDelete({
+  _id: itemId,
+  userId: authenticatedUserId,
+});
 
     if (!deletedItem) {
       res.status(404).json({
         success: false,
-        message: "Item not found.",
+        message: "Item not found or you do not have permission to delete it.",
       });
       return;
     }
@@ -171,6 +273,7 @@ export const deleteItem = async (
     });
   } catch (error) {
     console.error("Delete item error:", error);
+
     res.status(500).json({
       success: false,
       message: "Failed to delete item.",
@@ -178,9 +281,11 @@ export const deleteItem = async (
   }
 };
 
-
 // SMART MATCHING HELPER
-const calculateSimilarity = (text1: string, text2: string): number => {
+const calculateSimilarity = (
+  text1: string,
+  text2: string
+): number => {
   const words1 = new Set(
     text1.toLowerCase().match(/[a-z0-9]+/g) || []
   );
@@ -328,4 +433,3 @@ export const getSmartMatches = async (
     });
   }
 };
-

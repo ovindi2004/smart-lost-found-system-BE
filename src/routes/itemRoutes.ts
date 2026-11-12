@@ -7,16 +7,17 @@ import {
   updateItem,
   deleteItem,
   getSmartMatches
-  
 } from "../controllers/itemController.js";
+
+import { authenticateMiddleware } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-router.post("/", createItem);
+router.post("/", authenticateMiddleware, createItem);
 router.get("/", getAllItems);
 
-router.put("/:id", updateItem);
-router.delete("/:id", deleteItem);
+router.put("/:id", authenticateMiddleware, updateItem);
+router.delete("/:id", authenticateMiddleware, deleteItem);
 router.get("/:id/matches", getSmartMatches);
 
 export default router;
