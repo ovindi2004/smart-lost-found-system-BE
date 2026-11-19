@@ -51,7 +51,11 @@ app.get("/api/health", async (_req, res) => {
                 process.env.MONGODB_URL ||
                 process.env.DATABASE_URL),
             hasJwtSecret: Boolean(process.env.JWT_SECRET),
-            hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
+            hasGeminiKey: Boolean(process.env.GEMINI_API_KEY ||
+                process.env.GOOGLE_API_KEY ||
+                process.env.GOOGLE_GENAI_API_KEY),
+            hasGeminiModel: Boolean(process.env.GEMINI_MODEL),
+            configuredGeminiModel: process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash",
         },
         error: dbError,
     });
