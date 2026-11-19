@@ -104,6 +104,36 @@ export const getAllItems = async (
   }
 };
 
+// GET SINGLE ITEM BY ID
+export const getItemById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const item = await Item.findById(req.params.id).populate("userId", "name email");
+
+    if (!item) {
+      res.status(404).json({
+        success: false,
+        message: "Item not found.",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: item,
+    });
+  } catch (error) {
+    console.error("Get item by id error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve item.",
+    });
+  }
+};
+
 // UPDATE ITEM
 export const updateItem = async (
   req: Request,
@@ -121,9 +151,9 @@ export const updateItem = async (
       status,
     } = req.body;
 
-    const authenticatedUserId = (
-      req as Request & { userId?: string }
-    ).userId;
+    const authReq = req as Request & { userId?: string; userRole?: string };
+    const authenticatedUserId = authReq.userId;
+    const userRole = authReq.userRole;
 
     if (!authenticatedUserId) {
       res.status(401).json({
@@ -183,19 +213,21 @@ export const updateItem = async (
 
     const itemId = req.params.id;
 
-if (!itemId) {
-  res.status(400).json({
-    success: false,
-    message: "Invalid item ID.",
-  });
-  return;
-}
+    if (!itemId) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid item ID.",
+      });
+      return;
+    }
+
+    const query =
+      userRole === "ADMIN"
+        ? { _id: itemId }
+        : { _id: itemId, userId: authenticatedUserId };
 
     const updatedItem = await Item.findOneAndUpdate(
-     {
-  _id: itemId,
-  userId: authenticatedUserId,
-},
+      query,
       updateData,
       {
         new: true,
@@ -232,9 +264,9 @@ export const deleteItem = async (
   res: Response
 ): Promise<void> => {
   try {
-    const authenticatedUserId = (
-      req as Request & { userId?: string }
-    ).userId;
+    const authReq = req as Request & { userId?: string; userRole?: string };
+    const authenticatedUserId = authReq.userId;
+    const userRole = authReq.userRole;
 
     if (!authenticatedUserId) {
       res.status(401).json({
@@ -246,18 +278,20 @@ export const deleteItem = async (
 
     const itemId = req.params.id;
 
-if (!itemId) {
-  res.status(400).json({
-    success: false,
-    message: "Invalid item ID.",
-  });
-  return;
-}
+    if (!itemId) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid item ID.",
+      });
+      return;
+    }
 
-    const deletedItem = await Item.findOneAndDelete({
-  _id: itemId,
-  userId: authenticatedUserId,
-});
+    const query =
+      userRole === "ADMIN"
+        ? { _id: itemId }
+        : { _id: itemId, userId: authenticatedUserId };
+
+    const deletedItem = await Item.findOneAndDelete(query);
 
     if (!deletedItem) {
       res.status(404).json({

@@ -225,9 +225,9 @@ export const updateClaimStatus = async (
   try {
     const { status } = req.body;
 
-    const loggedInUserId = (
-      req as Request & { userId?: string }
-    ).userId;
+    const authReq = req as Request & { userId?: string; userRole?: string };
+    const loggedInUserId = authReq.userId;
+    const loggedInUserRole = authReq.userRole;
 
     if (!loggedInUserId) {
       res.status(401).json({
@@ -255,10 +255,10 @@ export const updateClaimStatus = async (
       return;
     }
 
-    if (claim.ownerId.toString() !== loggedInUserId) {
+    if (claim.ownerId.toString() !== loggedInUserId && loggedInUserRole !== "ADMIN") {
       res.status(403).json({
         success: false,
-        message: "Only the item owner can approve or reject this claim.",
+        message: "Only the item owner or an admin can approve or reject this claim.",
       });
       return;
     }

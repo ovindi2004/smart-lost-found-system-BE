@@ -95,7 +95,9 @@ export const authenticateMiddleware = async (
       return;
     }
 
-    (req as Request & { userId?: string }).userId = user._id.toString();
+    const authReq = req as Request & { userId?: string; userRole?: string };
+    authReq.userId = user._id.toString();
+    authReq.userRole = user.role;
 
     next();
   } catch (error) {
